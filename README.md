@@ -1,168 +1,154 @@
 # FastAPI URL Shortener
 
-A simple URL Shortener API built using Python, FastAPI, and SQLite.
-
-This project converts long URLs into short, shareable links. When someone accesses a shortened link, the application redirects them to the original URL.
-
-The project is being developed to understand REST API development, database operations, URL redirection, and backend application design.
-
-## Tech Stack
-
-- Python
-- FastAPI
-- SQLite
-- SQLAlchemy
-- Pydantic
-- Uvicorn
+A REST API built with **FastAPI** that converts long URLs into short links. It supports redirection, click tracking, URL management, pagination, and optional link expiration.
 
 ## Features
 
-- Create short URLs from original URLs.
-- Generate unique short codes.
-- Reuse existing short codes for duplicate original URLs.
-- Redirect users to the original URLs.
+- Create short URLs with randomly generated short codes.
+- Prevent duplicate entries for the same original URL.
+- Redirect short URLs to their original destinations.
 - Track the number of clicks.
-- Validate incoming URLs.
-- Handle invalid or non-existent short codes.
+- Retrieve URL details using a short code.
+- List URLs with pagination.
+- Delete existing URLs.
+- Set optional expiration dates for short URLs.
+- Validate URLs and reject expired or invalid expiration dates.
+
+## Tech Stack
+
+- **Backend:** Python, FastAPI
+- **Database:** SQLite
+- **ORM:** SQLAlchemy
+- **Validation:** Pydantic
+- **Testing:** Pytest, FastAPI TestClient
+- **CI:** GitHub Actions
 
 ## Project Structure
 
 ```text
-fastapi-url-shortener/
-│
-├── app/
-│   ├── api/
-│   │   └── routes/
-│   ├── core/
-│   ├── db/
-│   ├── models/
-│   ├── repositories/
-│   ├── schemas/
-│   ├── services/
-│   └── main.py
-│
-├── tests/
-├── README.md
-├── requirements.txt
-└── .gitignore
+app/
+├── api/routes/       # API endpoints
+├── core/             # Application configuration
+├── db/               # Database connection
+├── models/            # SQLAlchemy models
+├── repositories/      # Database operations
+├── schemas/           # Request and response validation
+├── services/          # Business logic
+└── main.py            # FastAPI application
+
+tests/                 # Automated tests
+.github/workflows/     # CI workflow
+README.md
+requirements.txt
 ```
 
-## How It Works
-
-1. The user submits an original URL through the API.
-2. The application checks whether the URL already exists.
-3. If it exists, the existing short code is returned.
-4. Otherwise, the application generates a unique short code.
-5. The original URL and short code are stored in SQLite.
-6. When someone opens the short URL, the application looks up the short code.
-7. The user is redirected to the original URL.
-8. The click count is updated.
-
-## Design Decisions
-
-### 1. Why URL Shortening?
-
-- Long URLs are difficult to share and remember.
-- Short URLs make links more compact and convenient.
-- Users can access the original destination through a short link.
-
-### 2. Why Store Both URLs?
-
-- The original URL is required for redirection.
-- The short code identifies the original URL.
-- Both are stored in the database.
-
-### 3. Handling Duplicate URLs
-
-- The application reuses an existing short code when the same original URL is submitted.
-- This avoids duplicate records for identical URLs.
-- Click counts are shared for the same shortened URL.
-
-### 4. Why SQLite?
-
-- Lightweight and easy to configure.
-- Suitable for a small backend application.
-- Does not require a separate database server.
-
-### 5. Why SQLAlchemy?
-
-- Provides an ORM to interact with the database using Python.
-- Helps organize database operations.
-- Reduces the need to write raw SQL for common operations.
-
-### 6. Why FastAPI?
-
-- Provides a simple way to build REST APIs.
-- Supports request validation using Pydantic.
-- Automatically generates interactive API documentation.
-
-## Setup Instructions
+## Getting Started
 
 ### 1. Clone the repository
 
 ```bash
-git clone git@github-personal:Harshi-shetty123/fastapi-url-shortener.git
+git clone https://github.com/Harshi-shetty123/fastapi-url-shortener.git
 cd fastapi-url-shortener
 ```
 
 ### 2. Create a virtual environment
 
 ```bash
-python3 -m venv venv
-```
-
-### 3. Activate the virtual environment
-
-Linux / macOS:
-
-```bash
+python -m venv venv
 source venv/bin/activate
 ```
 
-Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-### 4. Install dependencies
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Run the application
+### 4. Start the application
 
 ```bash
-uvicorn app.main:app --reload --port 8765
+python -m uvicorn app.main:app --reload --port 8765
 ```
 
-## API Documentation
+The API will be available at:
 
-Once the application is running, open:
+`http://127.0.0.1:8765`
 
-- Swagger UI: http://127.0.0.1:8765/docs
-- ReDoc: http://127.0.0.1:8765/redoc
+Interactive API documentation:
+
+`http://127.0.0.1:8765/docs`
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/urls/` | Create a short URL |
+| GET | `/urls/` | List URLs with pagination |
+| GET | `/urls/{short_code}/details` | Retrieve URL details |
+| GET | `/urls/{short_code}` | Redirect to original URL |
+| DELETE | `/urls/{short_code}` | Delete a short URL |
+
+### Create URL
+
+**Request:**
+
+```json
+{
+  "original_url": "https://www.wikipedia.org/",
+  "expires_at": "2026-10-30T10:00:00Z"
+}
+```
+
+`expires_at` is optional and must be a future timestamp with a timezone.
+
+### Example Response
+
+```json
+{
+  "id": 1,
+  "original_url": "https://www.wikipedia.org/",
+  "short_code": "abc123",
+  "short_url": "http://127.0.0.1:8765/urls/abc123",
+  "click_count": 0,
+  "created_at": "2026-10-24T07:30:00",
+  "expires_at": "2026-10-30T10:00:00"
+}
+```
+
+### Pagination
+
+```text
+GET /urls/?skip=0&limit=10
+```
+
+## Running Tests
+
+```bash
+python -m pytest -q
+```
+
+The test suite covers URL creation, duplicate handling, validation, redirection, click tracking, pagination, deletion, and expiration.
+
+## Design
+
+The application follows a simple layered architecture:
+
+- **Routes:** Handle HTTP requests and responses.
+- **Schemas:** Validate incoming data and structure responses.
+- **Services:** Contain business logic.
+- **Repositories:** Handle database operations.
+- **Models:** Define database tables.
 
 ## Future Improvements
 
+- User authentication and URL ownership.
 - Custom short codes.
-- URL expiration.
-- Separate click analytics.
-- User-specific URL management.
-- Docker support.
+- Rate limiting.
+- URL analytics and reporting.
+- Database migration support.
 
-## Learning Outcomes
+## Author
 
-This project focuses on understanding:
+**Harshitha Ratna M**
 
-- REST API development using FastAPI.
-- Database design and SQLAlchemy ORM.
-- Pydantic request and response validation.
-- Separation of API, service, repository, and model layers.
-- URL redirection and HTTP status codes.
-- Error handling and input validation.
-
----
-
-**Project Status:** Under Development
+GitHub: [Harshi-shetty123](https://github.com/Harshi-shetty123)

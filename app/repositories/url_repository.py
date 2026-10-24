@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 
 from app.models.url import URL
@@ -34,3 +35,17 @@ def create_url(db: Session, original_url: str, short_code: str):
     except Exception:
         db.rollback()
         raise
+
+
+def increment_click_count(db: Session, url: URL):
+    db.query(URL).filter(
+        URL.id == url.id
+    ).update(
+        {URL.click_count: URL.click_count + 1},
+        synchronize_session=False
+    )
+
+    db.commit()
+    db.refresh(url)
+
+    return url
